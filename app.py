@@ -11,7 +11,8 @@ r = redis.Redis()
 hex_digits = set(string.hexdigits.lower())
 validate_hash = lambda hash: len(hash) % 16 == 0 and len(hash) <= 128 and all(chr in hex_digits for chr in hash)
 
-byte_seconds = 86400 * 365
+byte_seconds = 86400 * 365 * 2 #2 Byte Years
+max_value_size = 16 * 1024 #16KB
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -55,13 +56,14 @@ def index():
 		data = {}
 		for keys, values in zip(hash_lists, hash_list_values):		
 			for k, v in zip(keys, values):
-				insert_time = int(k.split('-')[1])
-				hash = k.split('-')[0]
-				if hash not in data:
-					data[hash] = {}
-				if insert_time not in data[hash]:
-					data[hash][insert_time] = []
-				data[hash][insert_time].append(v)
+				if v != None:
+					insert_time = int(k.split('-')[1])
+					hash = k.split('-')[0]
+					if hash not in data:
+						data[hash] = {}
+					if insert_time not in data[hash]:
+						data[hash][insert_time] = []
+					data[hash][insert_time].append(v)
 		return jsonify(**data)
 
 if __name__ == '__main__':
