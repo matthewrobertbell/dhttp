@@ -53,17 +53,22 @@ def index():
 				pipe.mget(hash_list)
 			hash_list_values = pipe.execute()
 
+		expired_hash_keys = []
 		data = {}
-		for keys, values in zip(hash_lists, hash_list_values):		
-			for k, v in zip(keys, values):
-				if v != None:
-					insert_time = int(k.split('-')[1])
+		with r.pipeline() as pipe:
+			for keys, values in zip(hash_lists, hash_list_values):
+				for k, v in zip(keys, values):
 					hash = k.split('-')[0]
-					if hash not in data:
-						data[hash] = {}
-					if insert_time not in data[hash]:
-						data[hash][insert_time] = []
-					data[hash][insert_time].append(v)
+					if v != None:
+						insert_time = int(k.split('-')[1])
+						if hash not in data:
+							data[hash] = {}
+						if insert_time not in data[hash]:
+							data[hash][insert_time] = []
+						data[hash][insert_time].append(v)
+					else:
+						pipe.srem('list.'+hash, k)
+			pipe.execute()
 		return jsonify(**data)
 
 if __name__ == '__main__':
